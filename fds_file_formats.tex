@@ -1,0 +1,120 @@
+\documentclass{article}
+\newcommand{\I}[1]{\item[\texttt{ #1 }]}
+\newcommand{\T}{\texttt}
+\title{lightlabsFDS File Format}
+\begin{document}
+\maketitle
+\tableofcontents
+
+\begin{abstract}
+lightlabsFDS uses the HDF5 file format as a low-level interface. 
+HDF5 files are used to store both the input and output parameters of a 
+    simulation.
+This specification is particularly useful in determining whether a feature
+    or function is the responsibility of the client or server.
+\end{abstract}
+
+\section{General remarks}
+\begin{itemize}
+\item   All floating-point values are stored in single-precision, and all
+            three-dimensional fields are subject to lossless compression.
+\item   Be aware that Matlab arrays are stored in column-major ordering;
+            however, HDF5 uses row-major ordering. 
+        To convert a three-dimensional array from column-major to row-major
+            ordering in Matlab, one can use the \T{permute} function.
+\end{itemize}
+The following work-distribution is implied from the input and output
+    file formats.
+Specifically, the server is only responsible for computing the output 
+    $E$-fields based on the information found in the input file.
+Consequently, the client is then responsible for features such as
+\begin{itemize}
+\item   setting up PML parameters,
+\item   taking care of symmetry planes, 
+\item   shape generation (including edge-smoothing),
+\item   any mode-solving necessary for determing input sources,
+\item   visualizing input and output fields,
+\item   calculating $D$-, $H$-, and $B$- output fields, and 
+\item   interpreting those output fields (calculating flux, energy, \ldots).
+\end{itemize}
+
+\section{Input file format}
+The input HDF5 file consists of the following fields:
+\begin{description}
+\I  {reservation\_id} 
+    An identifier of some kind.
+    Some kind of random number that certifies that this is indeed from the
+        correct user.
+    The purpose is to reserve the user's place in line and to authenticate
+        the user as well.
+
+\I  {omega}
+    Floating-point scalar which determines the angular frequency
+        of the simulation.
+
+\I  {shape} 
+    A 3-element array of positive integers in the format 
+        \T{xx} $\times$ \T{yy} $\times$ \T{zz}.
+
+\I  {boundary\_conditions}
+    6-element array of character strings which denote the boundary conditions 
+        at the endfaces of the grid in the order 
+        $-x$, $+x$, $-y$, $+y$, $-z$, and $+z$.
+    Each element must be one of three character strings: 
+        \T{pec} (perfect electrical conductor), 
+        \T{pmc} (perfect magnetic conductor), or 
+        \T{per} (periodic).
+
+\I  {sx\_real, sx\_imag, sy\_real, sy\_imag, sz\_real, sz\_imag}
+    One-dimensional floating-point arrays describing the stretched-coordinate
+        distances between adjacent grid points.
+    Specifically, these denote the distances \emph{between} integer points 
+        along the $x$-, $y$-, and $z$-directions 
+        (e.g. distance between $x = 0$ and $x = 1$).
+    The length of the \T{si\_real} or \T{si\_imag} array,
+        where \T{i = x,y,z},
+        are \T{xx}, \T{yy}, and \T{zz} respectively.
+    Lastly, the first element of the array corresponds to the distance between
+        the points at positions \T{0} and \T{1},
+        while the last element of the array corresponds to the distance between
+        the points at positions \T{N} and (hypothetical) \T{N+1}.
+
+\I  {tx\_real, tx\_imag, ty\_real, ty\_imag, tz\_real, tz\_imag}
+    One-dimensional floating-point arrays describing the stretched-coordinate
+        distances between adjacent grid points.
+    Specifically, these denote the distances \emph{centered} at integer points 
+        along the $x$-, $y$-, and $z$-directions
+        (e.g. distance between $x = 0$ and $x = 1$)
+    The length of the \T{ti\_real} or \T{ti\_imag} array,
+        where \T{i = x,y,z},
+        are \T{xx}, \T{yy}, and \T{zz} respectively.
+    Lastly, the first element of the array corresponds to the distance between
+        the points at positions \T{-0.5} and \T{0.5},
+        while the last element of the array corresponds to the distance between
+        the points at positions \T{N-0.5} and (hypothetical) \T{N+0.5}.
+
+\I  {ex\_real, ex\_imag, ey\_real, ey\_imag, ez\_real, ez\_imag}
+    Three-dimensional floating-point arrays describing the values of $\epsilon$.
+    The shape of the arrays must be \T{xx} $\times$ \T{yy} $\times$ \T{zz}.
+
+\I  {mx\_real, mx\_imag, my\_real, my\_imag, mz\_real, mz\_imag}
+    Three-dimensional floating-point arrays describing the values of $\mu$.
+    The shape of the arrays must be \T{xx} $\times$ \T{yy} $\times$ \T{zz}.
+
+\I  {Jx\_real, Jx\_imag, Jy\_real, Jy\_imag, Jz\_real, Jz\_imag}
+    Three-dimensional floating-point arrays describing the values of the
+        current sources.
+    The shape of the arrays must be \T{xx} $\times$ \T{yy} $\times$ \T{zz}.
+\end{description}
+
+\section{Output file format}
+The output HDF5 file that is returned to the user
+    consists of the following fields:
+\begin{description}
+\I  {Ex\_real, Ex\_imag, Ey\_real, Ey\_imag, Ez\_real, Ez\_imag}
+    Three-dimensional floating-point arrays describing the values of the
+        current sources.
+    The shape of the arrays is \T{xx} $\times$ \T{yy} $\times$ \T{zz}.
+\end{description}
+
+\end{document}
